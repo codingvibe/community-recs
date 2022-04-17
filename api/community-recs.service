@@ -1,8 +1,8 @@
 [Unit]
-Description=Bot for Twitch Chat
+Description=Backend for Community Recs
 
 [Service]
-WorkingDirectory=/root/animated-twitch-chat-bot/api/
+WorkingDirectory=/root/community-recs/api/
 ExecStart=node server.js
 Restart=true
 

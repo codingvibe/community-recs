@@ -47,11 +47,6 @@ const allRecommendations = {
 
 const usersInCommunities = {}
 
-/*
-TODO
-- CLEAN CLEAN CLEAN CLEAN CLEAN CLEAN CLEAN CLEAN CODE
-*/
-
 /////////////////////////// Set Up Server ///////////////////////////
 const app = express();
 const router = express.Router();
@@ -61,7 +56,7 @@ app.use(session({
   resave: true,
   secret: SESSION_SECRET
 }));
-const whitelist = ['https://twitchoverlay.codingvibe.dev']
+const whitelist = ['https://communityrecsapi.codingvibe.dev']
 if (!DEPLOYED) {
   whitelist.push('http://localhost:8000');
 }
