@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <script src="../js/callApi.js" type="module"></script>
+  </head>
+  <body>
+    <script id="js-stytch" src="https://js.stytch.com/stytch.js"></script>
+    <div class="app">
+      <div class="sign-in-container">
+        <div id="stytch-sdk"></div>
+        <div id="message"></div>
+      </div>
+    </div>
+    <script type="module">
+      import {callBackend, getFrontendUrl } from '../js/callApi.js'
+      const paramsString = window.location.href.substring(window.location.href.indexOf('?'));
+      const searchParams = new URLSearchParams(paramsString);
+      const communityId = searchParams.get("community");
+      const STYTCH_PUBLIC_TOKEN = "public-token-test-bb3dc65b-1dd5-478a-87f8-d3d29f5465c1";
+      const stytch = Stytch(STYTCH_PUBLIC_TOKEN, {
+        onEvent: (data) => {
+          if (data.eventData.type === 'USER_EVENT_TYPE' && communityId) {
+            try {
+              const body = {
+                userId: data.eventData.userId,
+                communityId: communityId
+              }
+              callBackend('/users/communities', {method: 'POST', body: body, skipParse: true});
+            } catch(e) {
+              console.log(e);
+            }
+          }
+        },
+        onSuccess: (data) => {
+            // Handle a successfully sent magic link
+            console.log(data);
+        },
+        onError: (data) => {
+          console.log(data);
+        }
+      });
+      var style = {
+        fontFamily: 'Arial',
+        width: '321px',
+        primaryColor: '#106ee9',
+      };
+      var loginOrSignupView = {
+        products: ['emailMagicLinks'],
+        emailMagicLinksOptions: {
+          loginRedirectURL: `${getFrontendUrl()}/authenticate`,
+          loginExpirationMinutes: 60,
+          signupRedirectURL: `${getFrontendUrl()}/authenticate`,
+          signupExpirationMinutes: 60,
+        },
+      };
+      stytch.mount({
+        elementId: "#stytch-sdk",
+        style,
+        loginOrSignupView,
+      });
+    </script>
+  </body>
+</html>

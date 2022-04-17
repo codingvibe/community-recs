@@ -1,0 +1,286 @@
+body, html {
+  font-family: 'Vollkorn', serif;
+  font-weight: 400;
+  line-height: 1.3;
+  font-size: 16px;
+}
+
+.siteTitle {
+  display: block;
+  font-weight: 900;
+  font-size: 30px;
+  margin: 20px 0;
+}
+
+header,
+main,
+footer {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.card {
+  height: 400px;
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-end;
+  text-decoration: none;
+  border: 4px solid #524bbb;
+  margin-bottom: 20px;
+  background-size: cover;
+}
+
+.inner {
+  width: 30%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center; 
+  box-sizing: border-box;
+}
+
+.title {
+  font-size: 24px;
+  background-color: rgba(255, 255, 255, 0.5); 
+  text-align: center;
+  font-weight: 700;
+  color: #181818;
+  text-shadow: 0px 2px 2px #a6f8d5;
+  position: relative;
+  margin: 0 0 20px 0;
+}
+
+.subtitle {
+  color: #b0215e;
+  text-align: center;
+}
+
+.plusOne:disabled{
+  cursor: not-allowed;
+}
+
+.plusOneDisplay {
+  background-color: rgba(0, 0, 0, 0.5); 
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding: 0px 2px 2px 0px;
+}
+
+.plusOneCount {
+  color: #FFFFFF;
+  padding-right: 1vw;
+  padding-left: 1vw;
+  font-size: clamp(2rem, 10vh, 3rem);
+}
+
+
+.modal {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal.open {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0s;
+}
+.modal-bg {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.75); 
+  width: 100%;
+  height: 100%;
+}
+.modal-container {
+  border-radius: 10px;
+  background: #fff;
+  position: relative;
+  padding: 30px;
+}
+
+.modal-close {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  outline: none;
+  appearance: none;
+  color: red;
+  background: none;
+  border: 0px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.create {
+  position:absolute;
+  top:5px;
+  right:5px;
+  padding: 5px 5px 5px 5px;
+  background-color:#524bbb;
+  border-radius: 10px;
+  font-size: clamp(1.5rem, 8vmin, 2.5rem);
+  color:#FFFFFF;
+  cursor: pointer;
+}
+
+.back {
+  position:absolute;
+  top:5px;
+  left:5px;
+  padding: 5px 5px 5px 5px;
+  background-color:#524bbb;
+  border-radius: 10px;
+  font-size: clamp(1.5rem, 8vmin, 2.5rem);
+  color:#FFFFFF;
+  cursor: pointer;
+}
+
+.create.disabled {
+  background-color:#ABABAB;
+  border-color: #ABABAB;
+  color:#000000;
+  cursor: not-allowed;
+}
+
+.create .tooltip {
+  top: 105%;
+  right: 105%;
+  visibility: hidden;
+  font-size: clamp(1.5rem, 2vmin, 2rem);
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+  width: 100%;
+ 
+  position: absolute;
+  z-index: 1;
+}
+
+.create.disabled:hover .tooltip {
+  visibility: visible;
+}
+
+ul {
+  list-style-type: none;
+  min-width: 300px;
+  width: 30%;
+  padding-left: 0;
+}
+
+ul li {
+  padding: 0;
+  margin: 3px 0px 3px 0px;
+}
+
+ul a {
+  padding: 5px;
+  display: block;
+}
+
+li {
+  background-color: #7eaec9;
+  border-radius: 5px;
+  border: 4px solid #316684;
+  font-size: clamp(1.5rem, 5vmin, 2rem);
+  text-align: center;
+}
+
+li a {
+  text-decoration: none;
+  color: inherit;
+}
+
+li.highlight {
+  background-color: #cac764;
+  border-color: #696728;
+}
+
+.back a {
+  display:block;
+  color: inherit;
+  text-decoration: none;
+  text-align: center;
+}
+
+.recs {
+  margin-top: 15vh
+}
+
+button {
+  background-color: #524bbb;
+  color: white;
+  padding: 10px 10px;
+  text-decoration: none;
+  margin: 2px 2px;
+  cursor: pointer;
+  border-radius: 5px;
+  border: none;
+}
+
+label {
+  font-weight: bold;
+  display: block;
+  float: left;
+}
+
+.filterHeader {
+  font-size: 1.1em;
+  font-weight: bold;
+  padding: 5px 0px 5px 0px;
+  margin: 2px;
+}
+
+.submit:disabled {
+  background-color:#ABABAB;
+  border-color: #ABABAB;
+  color:#000000;
+}
+
+.errorDisplay {
+  color: red;
+}
+
+#communityLink {
+  display: block;
+  position: absolute;
+  top: 10vh;
+  width: 70%;
+}
+
+#communityLinkLabel {
+  display: block;
+  position: absolute;
+  top: 5vh;
+}
+
+#createCommunityResult{
+  visibility: hidden;
+}
+
+#createCommunityResult.show {
+  visibility: visible;
+}
+
+#copy {
+  cursor: pointer;
+  position: absolute;
+  top: 10vh;
+  right: 2vw;
+}
+
+#createUI.hidden{
+  visibility:hidden
+}

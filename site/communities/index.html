@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <link rel='stylesheet' type='text/css' href='../styles/style.css'>
+    <script src="../js/callApi.js" type="module"></script>
+  </head>
+  <body>
+    <div class="create disabled">
+      <a id="openSubmissionForm" data-modal="modal-one">Create</a>
+      <span class="tooltip">Already created a community!</span>
+    </div>
+    <div class="modal" id="modal-one">
+      <div class="modal-bg modal-exit"></div>
+      <div class="modal-container">
+        <div id="createUI">
+          <label for="communityName">Community Name:</label>
+          <input id = "communityName" name="Community Name" type="text" minlength="1">
+          <!-- TODO: make filters, custom community name -->
+          <div id="filters">
+            <div class="filterHeader">Filters:</div>
+            <div>
+              <label for="youtubeFilter">Youtube videos</label>
+              <input id = "youtubeFilter" name="Youtube Filter" type="checkbox">
+            </div>
+            <div>
+              <label for="imageFilter">Images</label>
+              <input id = "imageFilter" name="Image Filter" type="checkbox">
+            </div>
+          </div>
+          <button id="submitButton" class="submit" disabled>Submit</button>
+        </div>
+        <button class="modal-close modal-exit">X</button>
+        <div id="createCommunityResult">
+          <label id="communityLinkLabel" for="communityLink">Link to your community:</label>
+          <input type="text" id="communityLink" class="communityLink" value="" readonly>
+          <img id="copy" class="hidden" src="https://img.icons8.com/material-rounded/24/000000/copy.png"/>
+        </div>
+      </div>
+    </div>
+    <h2>Your Communities</h2>
+    <div id="yourCommunities">
+      <ul id="yourCommunitiesList">
+      </ul>
+    </div>
+    <h2>Communities You're In</h2>
+    <div id="communities">
+      <ul id="communitiesList">
+      </ul>
+    </div>
+    <script type="module">
+      import { callBackend, getFrontendUrl } from '../js/callApi.js';
+      const communitiesList = document.getElementById("communitiesList");
+      const yourCommunitiesList = document.getElementById("yourCommunitiesList");
+      const communityLink = document.getElementById("communityLink");
+      callBackend(`/communities`)
+        .then(communities => {
+          if (communities.length === 0) {
+            communitiesList.appendChild(getDefaultCommunity());
+          } else {
+            let alreadyHasCommunity = false;
+            communities.forEach(community => {
+              alreadyHasCommunity = alreadyHasCommunity | community.startedByUser;
+              addCommunity(community.id, community.name, community.startedByUser)
+            });
+            if (!alreadyHasCommunity) {
+              openFormButton.classList.remove('disabled');
+              openSubmissionForm.onclick = openCreateModal;
+            }
+          }
+        })
+        .catch(err => {
+          console.log(err);
+          console.log(`Encountered ${err.error} when calling /communities`);
+          console.log(err.body);
+        }); 
+
+      function getDefaultCommunity() {
+        const list = document.createElement("li");
+        list.innerText = "No communities :( Create one!"
+        return list;
+      }
+      
+      function addCommunity(id, name, ownCommunity) {
+        const link = document.createElement("a");
+        link.href = `${getFrontendUrl()}/recommendations?community=${id}`;
+        link.innerText = name;
+        const listEl = document.createElement("li");
+        listEl.appendChild(link);
+        if (ownCommunity) {
+          const tooltip = document.createElement("span");
+          tooltip.classList.add("tooltip");
+          tooltip.innerText = "This is your community!";
+          listEl.classList.add("highlight");
+          yourCommunitiesList.appendChild(listEl)
+        } else {
+          communitiesList.appendChild(listEl);
+        }
+      }
+      
+      const openFormButton = document.querySelector(".create")
+      const openSubmissionForm = document.getElementById("openSubmissionForm");
+      const modal = document.getElementById(openSubmissionForm.dataset.modal);
+      const communityName = modal.querySelector("#communityName");
+      const submitButton = modal.querySelector("#submitButton");
+      communityName.oninput = () => {
+        if (communityName.value.length > 3) {
+          submitButton.disabled = false;
+        } else {
+          submitButton.disabled = true;
+        }
+      }
+      
+      function openCreateModal(event) {
+        event.preventDefault();
+        modal.classList.add('open');
+        submitButton.onclick = () => {
+          submitButton.disabled = true;
+          const communityName = modal.querySelector("#communityName").value;
+          const youtubeFilter = modal.querySelector("#youtubeFilter").checked;
+          const imageFilter = modal.querySelector("#imageFilter").checked;
+          const body = {
+            name: communityName,
+            filters: {
+              youtube: youtubeFilter,
+              image: imageFilter
+            }
+          }
+          callBackend(`/communities`, {method: 'POST', body: body})
+            .then(response => {
+              event.preventDefault();
+              addCommunity(response.id, response.name, true);
+              openFormButton.classList.add('disabled');
+              showCommunityLink(response.id);
+            })
+            .catch(err => {
+              console.log(`Encountered ${err.error} when calling /communities`);
+              console.log(err.body);
+              submitButton.disabled = false;
+              modal.querySelector("#errorDisplay").innerHTML = err.body.error;
+            });
+        }
+
+        const exits = modal.querySelectorAll('.modal-exit');
+        exits.forEach(function(exit) {
+          exit.onclick = (event) => {
+            event.preventDefault();
+            modal.classList.remove('open');
+          }
+        });
+      }
+
+      function showCommunityLink(id) {
+        const resultDisplay = document.getElementById("createCommunityResult");
+        const createUI = document.getElementById("createUI");
+        createUI.classList.add("hidden")
+        resultDisplay.classList.add("show");
+        communityLink.value = `${getFrontendUrl()}/recommendations/?community=${id}`
+        copy.onclick = () => {
+          communityLink.select();
+          communityLink.setSelectionRange(0, 99999);
+          navigator.clipboard.writeText(communityLink.value);
+        }
+      }
+    </script>
+  </body>
+</html>

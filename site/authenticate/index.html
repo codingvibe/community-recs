@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <script src="../js/callApi.js" type="module"></script>
+  </head>
+  <body>
+    <script type="module">
+      import {callBackend} from '../js/callApi.js'
+      if (window.location.href.indexOf('?') > -1) {
+        const paramsString = window.location.href.substring(window.location.href.indexOf('?'));
+        const searchParams = new URLSearchParams(paramsString);
+        const token = searchParams.get("token");
+        if (token) {
+          callBackend(`/authenticate?token=${token}`, {method: "POST", skipParse: true})
+            .then((res) => {
+              window.location.assign("/communities");
+            })
+            .catch((err) => {
+              console.log(err)
+            });
+        }
+      }
+    </script>
+  </body>
+</html>

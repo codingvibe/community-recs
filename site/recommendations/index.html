@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <link rel='stylesheet' type='text/css' href='../styles/style.css'>
+    <script src="../js/callApi.js" type="module"></script>
+  </head>
+  <body>
+    <div id="recs" class="recs"> 
+    </div>
+
+    <!-- Stolen shamelessly from https://dev.to/dailydevtips1/vanilla-javascript-modal-pop-up-2oki -->
+    <div class="create disabled">
+      <a id="openSubmissionForm" data-modal="modal-one">Submit Rec</a>
+      <span class="tooltip">Already submitted a rec!</span>
+    </div>
+    <div class="back">
+      <a href="/communities">Back</a>
+    </div>
+    <div class="modal" id="modal-one">
+      <div class="modal-bg modal-exit"></div>
+      <div class="modal-container">
+        <div id="filterDisplay"></div>
+        <label for="recLink">Recommendation Link:</label>
+        <input id = "recLink" name="Recommendation Link" type="text" minlength="4" required>
+        <div id="submitErrorDisplay" class="errorDisplay"></div>
+        <button id="submitRecButton" class="submit">Submit</button>
+        <button class="modal-close modal-exit">X</button>
+      </div>
+    </div>
+    <script type="module">
+      import { callBackend } from '../js/callApi.js';
+      const defaultBackgroundImage = "url(../assets/default.png)"
+      const paramsString = window.location.href.substring(window.location.href.indexOf('?'));
+      const searchParams = new URLSearchParams(paramsString);
+      const communityId = searchParams.get("community");
+      const disablePreview = searchParams.get("disablePreview");
+      const recs = document.getElementById("recs");
+      const filterDisplay = document.getElementById("filterDisplay");
+      
+      const openFormButton = document.querySelector(".create")
+      const openSubmissionForm = document.getElementById("openSubmissionForm");
+
+      function openCreateModal(event) {
+        event.preventDefault();
+        const modal = document.getElementById(openSubmissionForm.dataset.modal);
+        modal.classList.add('open');
+        const submitRecButton = modal.querySelector("#submitRecButton");
+        submitRecButton.onclick = () => {
+          const recLink = modal.querySelector("#recLink").value;
+          submitRecButton.disabled = true;
+          callBackend(`/communities/${communityId}/recommendations`, {method: 'POST', body: {rec: recLink}})
+            .then(response => {
+              submitRecButton.disabled = false;
+              recs.appendChild(getRecommendationDisplay(response.id, response.rec, 
+                                  response.plus1s, response.alreadyPlus1d));
+              event.preventDefault();
+              modal.classList.remove('open');
+              disableSubmission();
+            })
+            .catch(err => {
+              console.log(`Encountered ${err.error} when calling /communities/${communityId}/recommendations`);
+              console.log(err.body);
+              modal.querySelector("#submitErrorDisplay").innerHTML = err.body.error;
+            });            
+        }
+
+        const exits = modal.querySelectorAll('.modal-exit');
+        exits.forEach(function(exit) {
+          exit.addEventListener('click', function(event) {
+            event.preventDefault();
+            modal.classList.remove('open');
+          });
+        });
+      }
+
+      function disableSubmission() {
+        openFormButton.classList.add('disabled');
+        openFormButton.disabled = true;
+        openSubmissionForm.disabled = true;
+        openSubmissionForm.onclick = null;
+      }
+
+      function enableSubmission() {
+        openFormButton.classList.remove('disabled');
+        openFormButton.disabled = false;
+        openSubmissionForm.onclick = openCreateModal;
+      }
+
+      callBackend(`/communities/${communityId}/recommendations`)
+        .then(response => {
+          filterDisplay.innerText = getFilterText(response.filters);
+          const responseRecs = response.recs;
+          let alreadySubmitted = false;
+          responseRecs.forEach(rec => {
+            alreadySubmitted = alreadySubmitted | rec.submittedByUser;
+            recs.appendChild(getRecommendationDisplay(rec.id, rec.rec, rec.plus1s, rec.alreadyPlus1d));
+          });
+          if (!alreadySubmitted) {
+            enableSubmission()
+          }
+        })
+        .catch(err => {
+          console.log(err);
+          console.log(`Encountered ${err.error} when calling /communities/${communityId}/recommendations`);
+          console.log(err.body);
+        }); 
+
+      function getRecommendationDisplay(id, link, plus1s, alreadyPlus1d) {
+        const inner = document.createElement("div");
+        inner.setAttribute("class", "inner card");
+        if (disablePreview) {
+          inner.style.backgroundImage = defaultBackgroundImage
+        } else if (link.indexOf("youtube") > -1 || link.indexOf("youtu.be") > -1) {
+          const youtubeId = getYoutubeIdFromLink(link);
+          if (youtubeId) {
+            inner.style.backgroundImage = `url(https://img.youtube.com/vi/${youtubeId}/sddefault.jpg)`
+          } else {
+            inner.style.backgroundImage = defaultBackgroundImage
+          }
+        } else if (link.match(/\.(jpeg|jpg|gif|png)$/) != null) {
+          inner.style.backgroundImage = `url(${link})`
+        } else {
+          inner.style.backgroundImage = defaultBackgroundImage
+        }
+
+        // Add the +1 button to every image!
+        const plusOneDisplay = getPlusOneDisplay(id, plus1s, alreadyPlus1d);
+        const title = document.createElement("a");
+        title.href = link;
+        title.target = "_blank";
+        title.rel = "noopener noreferrer";
+        title.setAttribute("class", "title");
+        title.innerHTML = link;
+        inner.appendChild(title);
+        inner.appendChild(plusOneDisplay);
+        return inner;
+      }
+
+      function getFilterText(filters) {
+        const filterMessages = []
+        if (filters.youtube) {
+          filterMessages.push("YouTube");
+        }
+        if (filters.image) {
+          filterMessages.push("Images");
+        }
+        return `Only supported links are: ${filterMessages.join(", ")}`
+      }
+
+      function getPlusOneDisplay(id, plus1s, alreadyPlus1d) {
+        const plusOneDisplay = document.createElement("div");
+        plusOneDisplay.setAttribute("class", "plusOneDisplay");
+        const plusOneCount = getPlusOneCount(plus1s)
+        const plusOne = getPlusOneButton(id, plus1s, alreadyPlus1d, plusOneCount);
+        plusOneDisplay.appendChild(plusOneCount);
+        plusOneDisplay.appendChild(plusOne);
+        return plusOneDisplay;
+      }
+
+      function getPlusOneCount(plus1s) {
+        const plusOneCount = document.createElement("div");
+        plusOneCount.innerHTML = plus1s;
+        plusOneCount.setAttribute("class", "plusOneCount");
+        return plusOneCount;
+      }
+
+      function getPlusOneButton(recId, plus1s, alreadyPlus1d, plusOneCount) {
+        const plusOne = document.createElement("input");
+        plusOne.type = "image";
+        plusOne.disabled = alreadyPlus1d;
+        if (alreadyPlus1d) {
+          plusOne.src = "../assets/plusone_bw.png";
+        } else {
+          plusOne.src = "../assets/plusone.png";
+        }
+        plusOne.setAttribute("class", "plusOne");
+        plusOne.onclick = () => {
+          plusOne.disabled = true;
+          plusOne.src = "../assets/plusone_bw.png";
+          plusOneCount.innerHTML = plus1s + 1;
+          callBackend(`/communities/${communityId}/recommendations/${recId}/plusOne`, {method: 'POST', skipParse: true})
+        }
+        return plusOne;
+      }
+
+      function getYoutubeIdFromLink(link) {
+        try {
+          if (link.indexOf("youtu.be") != -1) {
+            return link.substring(link.lastIndexOf("/") + 1);
+          } else {
+            return (new URL(link)).searchParams.get("v");
+          }
+        } catch (e) {
+          console.error("Something went wrong, oopsie?", e);
+          return null
+        }
+      }
+    </script>
+  </body>
+</html>
