@@ -56,7 +56,7 @@ app.use(session({
   resave: true,
   secret: SESSION_SECRET
 }));
-const whitelist = ['https://communityrecsapi.codingvibe.dev']
+const whitelist = ['https://communityrecs.codingvibe.dev']
 if (!DEPLOYED) {
   whitelist.push('http://localhost:8000');
 }
@@ -100,8 +100,8 @@ app.use(cors(corsOptions));
 app.use(router);
 let server;
 if (DEPLOYED) {
-  const privateKey = fs.readFileSync('/etc/letsencrypt/live/twitchbotapi.codingvibe.dev/privkey.pem');
-  const certificate = fs.readFileSync('/etc/letsencrypt/live/twitchbotapi.codingvibe.dev/fullchain.pem');
+  const privateKey = fs.readFileSync('/etc/letsencrypt/live/communityrecsapi.codingvibe.dev/privkey.pem');
+  const certificate = fs.readFileSync('/etc/letsencrypt/live/communityrecsapi.codingvibe.dev/fullchain.pem');
 
   const credentials = {key: privateKey, cert: certificate};
   server = https.createServer(credentials, app);
