@@ -238,6 +238,7 @@ app.post("/communities/:id/recommendations/:recid/plusOne", (req, res) => {
                                     .filter(plus1 => plus1 == req.session.userId).length > 0;
         if (alreadyRecommended) {
           res.status(403).send({"error": "Already +1'd."});
+          return;
         } else {
           allRecommendations[req.params.id].recs[i].plus1s.push(req.session.userId);
         }
