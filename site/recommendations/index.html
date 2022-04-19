@@ -60,6 +60,7 @@
               disableSubmission();
             })
             .catch(err => {
+              submitRecButton.disabled = false;
               console.log(`Encountered ${err.error} when calling /communities/${communityId}/recommendations`);
               console.log(err.body);
               modal.querySelector("#submitErrorDisplay").innerHTML = err.body.error;

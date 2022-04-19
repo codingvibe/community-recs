@@ -58,6 +58,8 @@
         .then(communities => {
           if (communities.length === 0) {
             communitiesList.appendChild(getDefaultCommunity());
+            openFormButton.classList.remove('disabled');
+            openSubmissionForm.onclick = openCreateModal;
           } else {
             let alreadyHasCommunity = false;
             communities.forEach(community => {

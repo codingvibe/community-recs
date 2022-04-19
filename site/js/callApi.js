@@ -18,13 +18,15 @@ export async function callBackend(path, options = {}) {
       credentials: 'include',
       body: body
     }).then(async (res) => {
+      if (res.status == 401) {
+        window.location.assign("/");
+        return;
+      }
       if (skipParse) {
         return;
       }
       const body = await res.json();
-      if (res.status == 401) {
-        window.location.assign("/");
-      } else if (res.status > 399) {
+      if (res.status > 399) {
         throw {
           error: res.status,
           body: body

@@ -15,6 +15,7 @@ const STYTCH_PROJECT_ID = process.env.STYTCH_PROJECT_ID;
 const STYTCH_PROJECT_SECRET = process.env.STYTCH_PROJECT_SECRET;
 const STYTCH_PROJECT_ENV = process.env.STYTCH_PROJECT_ENV;
 const SESSION_SECRET = process.env.SESSION_SECRET;
+const SESSION_DURATION_IN_MINUTES = process.env.SESSION_DURATION_IN_MINUTES || 60*60;
 const DEPLOYED = process.env.DEPLOYED;
 const COMMUNITY_TIMEOUT = process.env.COMMUNITY_TIMEOUT || 60*60*1000;
 
@@ -34,6 +35,12 @@ const allRecommendations = {
       {
         "id": "1234",
         "rec": "https://www.youtube.com/watch?v=q67cD8pDgqk",
+        "plus1s": ["melol", "youlol"],
+        "submittedBy": "melol"
+      },
+      {
+        "id": "1235",
+        "rec": "https://www.youtube.com/watch?v=g5MSf_ig_IA",
         "plus1s": [],
         "submittedBy": "melol"
       }
@@ -74,15 +81,17 @@ var corsOptions = {
 
 router.use('/communities', (req, res, next) => {
   if (!req.session || !req.session.token) {
-    // No auth token, no reccs for you
-    req.session.destroy();
+    // No auth token, no recs for you
+    if (req.session) {
+      req.session.destroy();
+    }
     res.sendStatus(401);
   } else {
     client.sessions.authenticate({session_token: req.session.token})
       .then((response) => {
         if (response.status_code === 200) {
           req.session.userId = response.session.user_id;
-          next()
+          next();
         } else {
           req.session.destroy();
           res.sendStatus(401);
@@ -105,27 +114,30 @@ if (DEPLOYED) {
 
   const credentials = {key: privateKey, cert: certificate};
   server = https.createServer(credentials, app);
-  server.listen(443)
+  server.listen(443);
 } else {
-  server = http.createServer(app)
-  server.listen(APP_PORT)
+  server = http.createServer(app);
+  server.listen(APP_PORT);
 }
 
 /////////////////////////// Set up REST ///////////////////////////
-
 app.post('/authenticate', (req, res) => {
   const token = req.query.token;
-  client.magicLinks.authenticate(token, {session_duration_minutes: 60})
+  client.magicLinks.authenticate(token, {session_duration_minutes: SESSION_DURATION_IN_MINUTES})
     .then(response => {
       req.session.token = response.session_token;
       req.session.save(function (err) {
-        if (err) console.log(err);
+        if (err) {
+          console.error(err);
+          res.status(500).send('There was an error authenticating the user.');
+        } else {
+          res.sendStatus(204);
+        }
       });
-      res.sendStatus(204);
     })
     .catch(error => {
       console.log(error);
-      res.send('There was an error authenticating the user.');
+      res.status(500).send('There was an error authenticating the user.');
     });
 });
 
@@ -134,10 +146,10 @@ app.post("/users/communities", (req, res) => {
     res.sendStatus(404);
   } else {
     if (!(req.body.userId in usersInCommunities)) {
-      usersInCommunities[req.body.userId] = []
+      usersInCommunities[req.body.userId] = [];
     }
-    if (usersInCommunities[req.body.userId].indexOf(req.body.communityId) === -1) {
-      usersInCommunities[req.body.userId].push(req.body.communityId)
+    if (!usersInCommunities[req.body.userId].includes(req.body.communityId)) {
+      usersInCommunities[req.body.userId].push(req.body.communityId);
     }
     res.sendStatus(204);
   }
@@ -157,6 +169,9 @@ app.post("/communities", (req, res) => {
     "started": Date.now(),
     "recs": [],
     "startedBy": req.session.userId
+  };
+  if (!(req.body.userId in usersInCommunities)) {
+    usersInCommunities[req.session.userId] = [];
   }
   usersInCommunities[req.session.userId].push(newRecId);
   res.send(buildCommunityReturnObject(newRecId, req.session.userId));
@@ -164,7 +179,7 @@ app.post("/communities", (req, res) => {
 
 app.get("/communities", (req, res) => {
   if (!(req.session.userId in usersInCommunities)) {
-    res.send([])
+    res.send([]);
   } else {
     res.send(usersInCommunities[req.session.userId].map((communityId) => {
       return buildCommunityReturnObject(communityId, req.session.userId);
@@ -177,8 +192,8 @@ app.get("/communities/:id/recommendations", (req, res) => {
     res.sendStatus(404);
   } else {
     const recs = allRecommendations[req.params.id].recs.map(rec => {
-      return buildRecommendationReturnObject(rec, req.session.userId);
-    });
+        return buildRecommendationReturnObject(rec, req.session.userId);
+      }).sort((a, b) => (a.plus1s > b.plus1s) ? -1 : 1);
     res.send({
       recs: recs,
       filters: allRecommendations[req.params.id].filters
@@ -191,12 +206,12 @@ app.post("/communities/:id/recommendations", (req, res) => {
     res.sendStatus(404);
   } else {
     const existingRec = allRecommendations[req.params.id].recs
-                          .filter(rec => rec.submittedBy == req.session.userId).length > 0
+                          .filter(rec => rec.submittedBy == req.session.userId).length > 0;
     if (existingRec) {
-      res.status(403).send({"error": "Already submitted a rec."})
+      res.status(403).send({"error": "Already submitted a rec."});
     } else {
       if (!passesFilters(allRecommendations[req.params.id].filters, req.body.rec)) {
-        res.status(400).send({"error": "Community filters are on and this doesn't match."})
+        res.status(400).send({"error": "Community filters are on and this doesn't match."});
       } else {
         const newRec = {
           "id": uuidv4(),
@@ -205,7 +220,7 @@ app.post("/communities/:id/recommendations", (req, res) => {
           "submittedBy": req.session.userId
         };
         allRecommendations[req.params.id].recs.push(newRec);
-        res.send(buildRecommendationReturnObject(newRec, req.session.userId))
+        res.send(buildRecommendationReturnObject(newRec, req.session.userId));
       }
     }
   }
@@ -222,7 +237,7 @@ app.post("/communities/:id/recommendations/:recid/plusOne", (req, res) => {
         const alreadyRecommended = allRecommendations[req.params.id].recs[i].plus1s
                                     .filter(plus1 => plus1 == req.session.userId).length > 0;
         if (alreadyRecommended) {
-          res.status(403).send({"error": "Already +1'd."})
+          res.status(403).send({"error": "Already +1'd."});
         } else {
           allRecommendations[req.params.id].recs[i].plus1s.push(req.session.userId);
         }
@@ -231,7 +246,7 @@ app.post("/communities/:id/recommendations/:recid/plusOne", (req, res) => {
     if (!found) {
       res.sendStatus(404);
     } else {
-      res.sendStatus(204)
+      res.sendStatus(204);
     }
   }
 })
