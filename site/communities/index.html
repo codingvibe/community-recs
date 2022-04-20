@@ -158,7 +158,7 @@
         const createUI = document.getElementById("createUI");
         createUI.classList.add("hidden")
         resultDisplay.classList.add("show");
-        communityLink.value = `${getFrontendUrl()}/recommendations/?community=${id}`
+        communityLink.value = `${getFrontendUrl()}/?community=${id}`
         copy.onclick = () => {
           communityLink.select();
           communityLink.setSelectionRange(0, 99999);
